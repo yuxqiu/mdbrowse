@@ -16,7 +16,7 @@
 })();
 </script>
 <style>
-  html { scrollbar-width: none; scroll-behavior: smooth; }
+  html { scrollbar-width: none; }
   html::-webkit-scrollbar { display: none; }
   body { margin: 0; }
   @media (prefers-color-scheme: dark) { body { background: #0d1117; } }
@@ -61,8 +61,18 @@
   var CHAR_WIDTH = 80;
   var PAGE_FRACTION = 0.9;
 
+  // instant: small incremental steps (j/k/h/l) -- animating every single
+  // one of these felt off, especially held down for continuous scrolling.
   function scrollByPx(dx, dy) {
     window.scrollBy(dx, dy);
+  }
+
+  // smooth: "jump" motions -- moving further, and only occasionally.
+  function scrollBySmooth(dx, dy) {
+    window.scrollBy({ left: dx, top: dy, behavior: "smooth" });
+  }
+  function scrollToSmooth(x, y) {
+    window.scrollTo({ left: x, top: y, behavior: "smooth" });
   }
 
   // vertical: line, half page, full page, top/bottom
@@ -70,11 +80,11 @@
   Mousetrap.bind("k", function () { scrollByPx(0, -LINE_HEIGHT); });
   Mousetrap.bind("ctrl+e", function () { scrollByPx(0, LINE_HEIGHT); });
   Mousetrap.bind("ctrl+y", function () { scrollByPx(0, -LINE_HEIGHT); });
-  Mousetrap.bind("ctrl+d", function (e) { e.preventDefault(); scrollByPx(0, window.innerHeight / 2); });
-  Mousetrap.bind("ctrl+u", function (e) { e.preventDefault(); scrollByPx(0, -window.innerHeight / 2); });
-  Mousetrap.bind(["ctrl+f", "space"], function (e) { e.preventDefault(); scrollByPx(0, window.innerHeight * PAGE_FRACTION); });
-  Mousetrap.bind(["ctrl+b", "backspace"], function (e) { e.preventDefault(); scrollByPx(0, -window.innerHeight * PAGE_FRACTION); });
-  Mousetrap.bind("g g", function () { window.scrollTo(window.scrollX, 0); });
+  Mousetrap.bind("ctrl+d", function (e) { e.preventDefault(); scrollBySmooth(0, window.innerHeight / 2); });
+  Mousetrap.bind("ctrl+u", function (e) { e.preventDefault(); scrollBySmooth(0, -window.innerHeight / 2); });
+  Mousetrap.bind(["ctrl+f", "space"], function (e) { e.preventDefault(); scrollBySmooth(0, window.innerHeight * PAGE_FRACTION); });
+  Mousetrap.bind(["ctrl+b", "backspace"], function (e) { e.preventDefault(); scrollBySmooth(0, -window.innerHeight * PAGE_FRACTION); });
+  Mousetrap.bind("g g", function () { scrollToSmooth(window.scrollX, 0); });
   // "shift+g" is unreliable for plain letters in Mousetrap (it forces
   // keydown-based detection, which normalizes the character to lowercase
   // regardless of shift); binding the literal produced character "G" uses
@@ -92,13 +102,13 @@
   function maxScrollWidth() {
     return Math.max(document.body.scrollWidth, document.documentElement.scrollWidth);
   }
-  Mousetrap.bind("G", function () { window.scrollTo(window.scrollX, maxScrollHeight()); });
+  Mousetrap.bind("G", function () { scrollToSmooth(window.scrollX, maxScrollHeight()); });
 
   // horizontal: char, start/end of scrollable width
   Mousetrap.bind("h", function () { scrollByPx(-CHAR_WIDTH, 0); });
   Mousetrap.bind("l", function () { scrollByPx(CHAR_WIDTH, 0); });
-  Mousetrap.bind("0", function () { window.scrollTo(0, window.scrollY); });
-  Mousetrap.bind("$", function () { window.scrollTo(maxScrollWidth(), window.scrollY); });
+  Mousetrap.bind("0", function () { scrollToSmooth(0, window.scrollY); });
+  Mousetrap.bind("$", function () { scrollToSmooth(maxScrollWidth(), window.scrollY); });
 
   // search
   var searchBar = document.getElementById("vim-search-bar");
