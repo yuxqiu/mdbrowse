@@ -22,6 +22,7 @@ copy("github-markdown-css/github-markdown.css", "github-markdown.css");
 copy("highlight.js/styles/github.min.css", "highlight-light.css");
 copy("highlight.js/styles/github-dark.min.css", "highlight-dark.css");
 copy("katex/dist/katex.min.css", "katex.min.css");
+copy("mousetrap/mousetrap.min.js", "mousetrap.min.js");
 cpSync(join(__dirname, "node_modules", "katex", "dist", "fonts"), join(outDir, "fonts"), {
   recursive: true,
 });

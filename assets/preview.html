@@ -26,11 +26,106 @@
     margin: 0 auto;
     padding: 2rem 1.5rem;
   }
+  #vim-search-bar {
+    display: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0.3rem 0.6rem;
+    background: #1e1e1e;
+    color: #eee;
+    font-family: ui-monospace, monospace;
+    font-size: 0.9rem;
+  }
+  #vim-search-bar.open { display: flex; }
+  #vim-search-bar .prefix { margin-right: 0.3rem; }
+  #vim-search-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: inherit;
+    font: inherit;
+  }
 </style>
 </head>
 <body>
 <article class="markdown-body" id="content"></article>
+<div id="vim-search-bar"><span class="prefix">/</span><input id="vim-search-input" autocomplete="off" spellcheck="false"></div>
 <script src="/vendor/markdown-it.bundle.js"></script>
+<script src="/vendor/mousetrap.min.js"></script>
+<script>
+(function () {
+  var LINE_HEIGHT = 60;
+  var CHAR_WIDTH = 80;
+  var PAGE_FRACTION = 0.9;
+
+  function scrollByPx(dx, dy) {
+    window.scrollBy(dx, dy);
+  }
+
+  // vertical: line, half page, full page, top/bottom
+  Mousetrap.bind("j", function () { scrollByPx(0, LINE_HEIGHT); });
+  Mousetrap.bind("k", function () { scrollByPx(0, -LINE_HEIGHT); });
+  Mousetrap.bind("ctrl+e", function () { scrollByPx(0, LINE_HEIGHT); });
+  Mousetrap.bind("ctrl+y", function () { scrollByPx(0, -LINE_HEIGHT); });
+  Mousetrap.bind("ctrl+d", function (e) { e.preventDefault(); scrollByPx(0, window.innerHeight / 2); });
+  Mousetrap.bind("ctrl+u", function (e) { e.preventDefault(); scrollByPx(0, -window.innerHeight / 2); });
+  Mousetrap.bind(["ctrl+f", "space"], function (e) { e.preventDefault(); scrollByPx(0, window.innerHeight * PAGE_FRACTION); });
+  Mousetrap.bind(["ctrl+b", "backspace"], function (e) { e.preventDefault(); scrollByPx(0, -window.innerHeight * PAGE_FRACTION); });
+  Mousetrap.bind("g g", function () { window.scrollTo(window.scrollX, 0); });
+  // "shift+g" is unreliable for plain letters in Mousetrap (it forces
+  // keydown-based detection, which normalizes the character to lowercase
+  // regardless of shift); binding the literal produced character "G" uses
+  // its keypress path instead, which is what actually reports shifted case.
+  Mousetrap.bind("G", function () { window.scrollTo(window.scrollX, document.body.scrollHeight); });
+
+  // horizontal: char, start/end of scrollable width
+  Mousetrap.bind("h", function () { scrollByPx(-CHAR_WIDTH, 0); });
+  Mousetrap.bind("l", function () { scrollByPx(CHAR_WIDTH, 0); });
+  Mousetrap.bind("0", function () { window.scrollTo(0, window.scrollY); });
+  Mousetrap.bind("$", function () { window.scrollTo(document.body.scrollWidth, window.scrollY); });
+
+  // search
+  var searchBar = document.getElementById("vim-search-bar");
+  var searchInput = document.getElementById("vim-search-input");
+  var lastQuery = "";
+
+  function find(query, backwards) {
+    if (!query || !window.find) return;
+    window.find(query, false, backwards, true, false, false, false);
+  }
+
+  function openSearch() {
+    searchBar.classList.add("open");
+    searchInput.value = "";
+    searchInput.focus();
+  }
+
+  function closeSearch() {
+    searchBar.classList.remove("open");
+    searchInput.blur();
+  }
+
+  searchInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      lastQuery = searchInput.value;
+      closeSearch();
+      find(lastQuery, false);
+    } else if (e.key === "Escape") {
+      closeSearch();
+    }
+    e.stopPropagation();
+  });
+
+  // Mousetrap ignores bindings while an <input> has focus, so these never
+  // fire while typing in the search box above.
+  Mousetrap.bind("/", function (e) { e.preventDefault(); openSearch(); });
+  Mousetrap.bind("n", function () { find(lastQuery, false); });
+  Mousetrap.bind("N", function () { find(lastQuery, true); }); // see the "G" comment above re: shift+letter
+})();
+</script>
 <script>
 (function () {
   var v = 0;

@@ -114,14 +114,17 @@ const server = http.createServer((req, res) => {
 
   if (url.pathname.startsWith("/vendor/")) {
     const rel = url.pathname.slice(1);
-    const ext = path.extname(rel).slice(1);
+    let asset;
     try {
-      res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
-      res.end(loadAsset(rel));
+      asset = loadAsset(rel);
     } catch {
       res.writeHead(404, { "Content-Type": "text/plain" });
       res.end("not found");
+      return;
     }
+    const ext = path.extname(rel).slice(1);
+    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+    res.end(asset);
     return;
   }
 

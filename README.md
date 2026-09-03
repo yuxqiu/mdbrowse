@@ -36,6 +36,18 @@ A later flag overrides an earlier one, so wrapping `mdbrowse` with your own
 default flags (e.g. in your own Nix config) composes cleanly — anything you
 pass explicitly still wins.
 
+### Keybindings
+
+| Key(s) | Action |
+| --- | --- |
+| `j` / `k` / `Ctrl+e` / `Ctrl+y` | scroll down / up one line |
+| `Ctrl+d` / `Ctrl+u` | scroll down / up half a page |
+| `Ctrl+f` / `Space`, `Ctrl+b` / `Backspace` | scroll down / up a full page |
+| `gg` / `G` | jump to top / bottom |
+| `h` / `l` | scroll left / right |
+| `0` / `$` | jump to left / right edge |
+| `/`, `n` / `N` | search, next / previous match |
+
 ## Install with Nix
 
 ```sh
