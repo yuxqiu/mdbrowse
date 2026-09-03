@@ -16,7 +16,7 @@
 })();
 </script>
 <style>
-  html { scrollbar-width: none; }
+  html { scrollbar-width: none; scroll-behavior: smooth; }
   html::-webkit-scrollbar { display: none; }
   body { margin: 0; }
   @media (prefers-color-scheme: dark) { body { background: #0d1117; } }
@@ -79,13 +79,26 @@
   // keydown-based detection, which normalizes the character to lowercase
   // regardless of shift); binding the literal produced character "G" uses
   // its keypress path instead, which is what actually reports shifted case.
-  Mousetrap.bind("G", function () { window.scrollTo(window.scrollX, document.body.scrollHeight); });
+  //
+  // maxScrollHeight/maxScrollWidth: under the CSS zoom applied above,
+  // document.body.scrollHeight measurably under-reports the page's true
+  // height (verified: body and documentElement agree exactly with no zoom,
+  // but diverge under it, with only documentElement staying correct) --
+  // the standard robust fix for this body/documentElement disagreement is
+  // to take the max of both, not to trust either alone.
+  function maxScrollHeight() {
+    return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+  }
+  function maxScrollWidth() {
+    return Math.max(document.body.scrollWidth, document.documentElement.scrollWidth);
+  }
+  Mousetrap.bind("G", function () { window.scrollTo(window.scrollX, maxScrollHeight()); });
 
   // horizontal: char, start/end of scrollable width
   Mousetrap.bind("h", function () { scrollByPx(-CHAR_WIDTH, 0); });
   Mousetrap.bind("l", function () { scrollByPx(CHAR_WIDTH, 0); });
   Mousetrap.bind("0", function () { window.scrollTo(0, window.scrollY); });
-  Mousetrap.bind("$", function () { window.scrollTo(document.body.scrollWidth, window.scrollY); });
+  Mousetrap.bind("$", function () { window.scrollTo(maxScrollWidth(), window.scrollY); });
 
   // search
   var searchBar = document.getElementById("vim-search-bar");
