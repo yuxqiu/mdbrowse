@@ -1,0 +1,48 @@
+name: Update vendored bundle
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # npm update rebuilds assets/vendor/* against the latest versions of
+      # every devDependency in build/package.json (markdown-it, highlight.js,
+      # katex, github-markdown-css, ...) within their declared semver ranges.
+      # A new vendored dep only needs adding there and to build.mjs's copy
+      # list -- this workflow picks it up automatically after that.
+      - name: Update build dependencies and rebuild assets/vendor
+        working-directory: build
+        run: |
+          npm update
+          npm run build
+
+      - name: Check for changes
+        id: diff
+        run: |
+          git add assets/vendor build/package-lock.json
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: update vendored assets"
+          git push

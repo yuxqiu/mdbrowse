@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>markdown preview</title>
+<link rel="stylesheet" href="/vendor/github-markdown.css">
+<link rel="stylesheet" href="/vendor/highlight-light.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="/vendor/highlight-dark.css" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="/vendor/katex.min.css">
+<script>
+(function () {
+  var zoom = parseFloat(new URLSearchParams(location.search).get("zoom"));
+  if (zoom > 0) {
+    document.documentElement.style.zoom = zoom;
+  }
+})();
+</script>
+<style>
+  html { scrollbar-width: none; }
+  html::-webkit-scrollbar { display: none; }
+  body { margin: 0; }
+  @media (prefers-color-scheme: dark) { body { background: #0d1117; } }
+  .markdown-body {
+    box-sizing: border-box;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+</style>
+</head>
+<body>
+<article class="markdown-body" id="content"></article>
+<script src="/vendor/markdown-it.bundle.js"></script>
+<script>
+(function () {
+  var v = 0;
+  var el = document.getElementById("content");
+  var previousText = null;
+
+  var bg = new URLSearchParams(location.search).get("bg");
+  if (bg) {
+    document.body.style.background = bg;
+    // github-markdown.css sets --bgColor-default directly on .markdown-body
+    // itself (not just :root), so it has to be overridden on this same
+    // element -- setting it higher up the tree would just get shadowed.
+    el.style.setProperty("--bgColor-default", bg);
+  }
+
+  function firstDiffLine(oldText, newText) {
+    var oldLines = oldText.split("\n");
+    var newLines = newText.split("\n");
+    var i = 0;
+    var minLen = Math.min(oldLines.length, newLines.length);
+    while (i < minLen && oldLines[i] === newLines[i]) i++;
+    return i;
+  }
+
+  function scrollToLine(line) {
+    var blocks = el.querySelectorAll("[data-line]");
+    var target = null;
+    for (var i = 0; i < blocks.length; i++) {
+      if (parseInt(blocks[i].getAttribute("data-line"), 10) > line) break;
+      target = blocks[i];
+    }
+    if (target) {
+      // explicit rect math instead of scrollIntoView({block:"center"}):
+      // that centers on the target's own (possibly tall) bounding box via
+      // browser-internal heuristics, which drift under the page zoom we
+      // apply above. This centers the same point every time.
+      var rect = target.getBoundingClientRect();
+      var targetCenter = rect.top + rect.height / 2;
+      var viewportCenter = window.innerHeight / 2;
+      window.scrollBy({ top: targetCenter - viewportCenter, behavior: "smooth" });
+    }
+  }
+
+  function renderMarkdown(text) {
+    el.innerHTML = window.__terminalBrowserRenderMarkdown(text);
+    if (previousText !== null) {
+      scrollToLine(firstDiffLine(previousText, text));
+    }
+    previousText = text;
+  }
+
+  async function fetchContent() {
+    var r = await fetch("/content");
+    v = parseInt(r.headers.get("X-Preview-Version") || "0", 10);
+    renderMarkdown(await r.text());
+  }
+
+  async function poll() {
+    try {
+      var r = await fetch("/wait?v=" + v);
+      var nv = parseInt(await r.text(), 10);
+      if (!isNaN(nv) && nv > v) {
+        await fetchContent();
+      }
+    } catch (e) {}
+    setTimeout(poll, 200);
+  }
+
+  fetchContent().then(poll);
+})();
+</script>
+</body>
+</html>
