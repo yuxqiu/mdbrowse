@@ -7,7 +7,7 @@
   },
   "devDependencies": {
     "@vscode/markdown-it-katex": "^1.1.2",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.28.1",
     "github-markdown-css": "^5.8.1",
     "highlight.js": "^11.10.0",
     "katex": "^0.16.11",
