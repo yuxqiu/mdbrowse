@@ -4,48 +4,19 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import { parseArgs } from "../lib/args.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const assetsDir = path.join(__dirname, "..", "assets");
 
-// matches "--<name>" (value in the next arg) or "--<name>=value"; returns
-// [value, nextIndex] or null if args[i] isn't this flag
-function parseFlag(args, i, name) {
-  const arg = args[i];
-  if (arg === `--${name}`) return [args[i + 1], i + 2];
-  if (arg.startsWith(`--${name}=`)) return [arg.slice(name.length + 3), i + 1];
-  return null;
-}
-
-let file = null;
-let zoom = 1;
-let bg = null;
-const args = process.argv.slice(2);
-for (let i = 0; i < args.length; ) {
-  const zoomMatch = parseFlag(args, i, "zoom");
-  if (zoomMatch) {
-    zoom = Number(zoomMatch[0]);
-    i = zoomMatch[1];
-    continue;
-  }
-  const bgMatch = parseFlag(args, i, "bg");
-  if (bgMatch) {
-    bg = bgMatch[0];
-    i = bgMatch[1];
-    continue;
-  }
-  if (!file) file = args[i];
-  i++;
-}
-
-if (!file) {
-  console.error("usage: mdbrowse <file.md> [--zoom <factor>] [--bg <css-color>]");
+let options;
+try {
+  options = parseArgs(process.argv.slice(2));
+} catch (error) {
+  console.error(error.message);
   process.exit(1);
 }
-if (!Number.isFinite(zoom) || zoom <= 0) {
-  console.error("mdbrowse: --zoom must be a positive number, e.g. --zoom 1.5");
-  process.exit(1);
-}
+const { file, zoom, bg } = options;
 const filePath = path.resolve(file);
 const fileDir = path.dirname(filePath);
 const fileName = path.basename(filePath);
@@ -74,7 +45,12 @@ function readContent() {
   for (const resolve of pending) resolve(version);
 }
 
-readContent();
+try {
+  readContent();
+} catch (error) {
+  console.error(`mdbrowse: cannot read '${file}': ${error.message}`);
+  process.exit(1);
+}
 // Watch the containing directory, not the file itself: editors that save
 // atomically (write a temp file, then rename it over the original -- Vim
 // and many "safe write" modes) replace the file's inode, and an inotify
