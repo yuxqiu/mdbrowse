@@ -33,6 +33,15 @@ const MIME = {
   woff: "font/woff",
   woff2: "font/woff2",
   ttf: "font/ttf",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  svg: "image/svg+xml",
+  webp: "image/webp",
+  ico: "image/x-icon",
+  bmp: "image/bmp",
+  avif: "image/avif",
 };
 
 let version = 0;
@@ -139,8 +148,26 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  res.writeHead(404, { "Content-Type": "text/plain" });
-  res.end("not found");
+  // Fall back to serving files next to the markdown source, relative to
+  // the page's own URL ("/") -- this is how the browser resolves relative
+  // image references (e.g. `![](images/foo.png)`) written in the markdown.
+  const requestedPath = path.join(fileDir, decodeURIComponent(url.pathname));
+  const relativePath = path.relative(fileDir, requestedPath);
+  if (relativePath !== "" && (relativePath.startsWith("..") || path.isAbsolute(relativePath))) {
+    res.writeHead(403, { "Content-Type": "text/plain" });
+    res.end("forbidden");
+    return;
+  }
+  fs.readFile(requestedPath, (error, data) => {
+    if (error) {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("not found");
+      return;
+    }
+    const ext = path.extname(requestedPath).slice(1);
+    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+    res.end(data);
+  });
 });
 
 server.on("error", (err) => {
