@@ -36,7 +36,7 @@
             runHook preInstall
 
             mkdir -p "$out/share/mdbrowse"
-            cp -r assets bin "$out/share/mdbrowse/"
+            cp -r assets bin lib "$out/share/mdbrowse/"
             makeWrapper ${pkgs.nodejs_22}/bin/node "$out/bin/mdbrowse" \
               --add-flags "$out/share/mdbrowse/bin/mdbrowse.mjs"
 

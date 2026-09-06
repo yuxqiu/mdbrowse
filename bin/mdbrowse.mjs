@@ -8,6 +8,8 @@ import { parseArgs } from "../lib/args.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const assetsDir = path.join(__dirname, "..", "assets");
+const preloadPath = path.join(__dirname, "..", "lib", "preload.cjs");
+const mainScriptPath = path.join(__dirname, "..", "lib", "main-script.cjs");
 
 let options;
 try {
@@ -158,7 +160,7 @@ server.listen(0, "127.0.0.1", () => {
   // yourself first and run mdbrowse in the new pane.
   const child = spawn(
     terminalBrowserCmd,
-    ["open", url, "--no-toolbar", "--no-frame"],
+    ["open", url, "--app-mode", `--preload=${preloadPath}`, `--main-script=${mainScriptPath}`],
     { stdio: "inherit" }
   );
 

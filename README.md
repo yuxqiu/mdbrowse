@@ -47,6 +47,10 @@ pass explicitly still wins.
 | `h` / `l` | scroll left / right |
 | `0` / `$` | jump to left / right edge |
 | `/`, `n` / `N` | search, next / previous match |
+| `q` / `Ctrl+q` | quit |
+
+Links in the rendered markdown open in your system's default browser
+instead of navigating the preview pane away.
 
 ## Install with Nix
 
