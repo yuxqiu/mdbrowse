@@ -3,13 +3,19 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
 import { parseArgs } from "../lib/args.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
 const assetsDir = path.join(__dirname, "..", "assets");
-const preloadPath = path.join(__dirname, "..", "lib", "preload.cjs");
-const mainScriptPath = path.join(__dirname, "..", "lib", "main-script.cjs");
+const pixelEntryPath = path.join(__dirname, "..", "lib", "pixel-entry.cjs");
+const pixelBinPath = path.join(
+  path.dirname(require.resolve("@zenbu-labs/pixel/package.json")),
+  "dist",
+  "bin.js"
+);
 
 let options;
 try {
@@ -22,8 +28,6 @@ const { file, zoom, bg } = options;
 const filePath = path.resolve(file);
 const fileDir = path.dirname(filePath);
 const fileName = path.basename(filePath);
-
-const terminalBrowserCmd = "terminal-browser";
 
 const WAIT_TIMEOUT_MS = 25000;
 const MIME = {
@@ -181,18 +185,15 @@ server.listen(0, "127.0.0.1", () => {
   if (bg) query.set("bg", bg);
   const url = `http://127.0.0.1:${port}/?${query}`;
 
-  // No --split: terminal-browser's own splitting is unimplemented on
-  // Linux+Ghostty (https://github.com/zenbu-labs/terminal-browser/issues/61).
-  // This takes over whatever pane invokes mdbrowse, so split your terminal
-  // yourself first and run mdbrowse in the new pane.
-  const child = spawn(
-    terminalBrowserCmd,
-    ["open", url, "--app-mode", `--preload=${preloadPath}`, `--main-script=${mainScriptPath}`],
-    { stdio: "inherit" }
-  );
+  // pixel has no split option either: this takes over whatever pane invokes
+  // mdbrowse, so split your terminal yourself first and run mdbrowse in the
+  // new pane.
+  const child = spawn(process.execPath, [pixelBinPath, pixelEntryPath, "--", url], {
+    stdio: "inherit",
+  });
 
   child.on("error", (err) => {
-    console.error(`mdbrowse: failed to launch '${terminalBrowserCmd}': ${err.message}`);
+    console.error(`mdbrowse: failed to launch pixel: ${err.message}`);
     server.close();
     process.exit(1);
   });

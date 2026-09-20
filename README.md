@@ -1,20 +1,17 @@
 # mdbrowse
 
 Live markdown preview from the terminal, rendered by
-[terminal-browser](https://github.com/zenbu-labs/terminal-browser).
+[pixel](https://github.com/zenbu-labs/pixel).
 
 ## Requirements
 
 - Node.js 18+
-- [`terminal-browser`](https://github.com/zenbu-labs/terminal-browser) on
-  `$PATH`, run inside a terminal that supports the Kitty graphics protocol
-  (kitty, ghostty, WezTerm, etc.)
+- A terminal that supports the Kitty graphics protocol (kitty, ghostty,
+  WezTerm, etc.)
 
 ## Usage
 
-`mdbrowse` takes over whatever pane runs it (same as `terminal-browser open`
-without `--split` — terminal-browser's own `--split` is
-[unimplemented on Linux+Ghostty](https://github.com/zenbu-labs/terminal-browser/issues/61)).
+`mdbrowse` takes over whatever pane runs it (pixel has no split option).
 Split your terminal yourself first, then run it in the new pane:
 
 ```sh
@@ -64,7 +61,7 @@ home-manager: `home.packages = [ inputs.mdbrowse.packages.${pkgs.system}.default
 ## Rebuilding the vendored bundle
 
 `assets/vendor/` (markdown-it, highlight.js, and KaTeX for `$...$`/`$$...$$`
-math, all rendered client-side inside terminal-browser's own Chromium) is a
+math, all rendered client-side inside pixel's own Chromium) is a
 build artifact, not meant to be hand-edited:
 
 ```sh

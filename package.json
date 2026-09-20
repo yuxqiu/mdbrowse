@@ -1,0 +1,16 @@
+{
+  "name": "mdbrowse",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "mdbrowse": "bin/mdbrowse.mjs"
+  },
+  "files": [
+    "assets",
+    "bin",
+    "lib"
+  ],
+  "dependencies": {
+    "@zenbu-labs/pixel": "0.0.15"
+  }
+}
