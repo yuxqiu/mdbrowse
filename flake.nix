@@ -55,12 +55,63 @@
           sha256 = pixelElectronHash;
         };
 
+        # The release build is a generic-glibc-distro binary, not linked
+        # against the nix store: left unpatched, its "pixel" binary can dlopen
+        # nothing outside a handful of paths that don't exist on NixOS, so its
+        # GPU process fails every launch and Chromium hard-exits once it hits
+        # its crash-retry limit ("GPU process isn't usable. Goodbye."). This
+        # is the same interpreter/rpath fix nixpkgs applies to its own
+        # electron-bin releases (pkgs/development/tools/electron/binary).
+        electronLibPath = pkgs.lib.makeLibraryPath (
+          with pkgs;
+          [
+            alsa-lib
+            at-spi2-atk
+            cairo
+            cups
+            dbus
+            expat
+            gdk-pixbuf
+            glib
+            gtk3
+            gtk4
+            nss
+            nspr
+            libx11
+            libxcb
+            libxcomposite
+            libxdamage
+            libxext
+            libxfixes
+            libxrandr
+            libxkbfile
+            pango
+            pciutils
+            stdenv.cc.cc
+            systemd
+            libnotify
+            pipewire
+            libsecret
+            libpulseaudio
+            speechd-minimal
+            libdrm
+            libgbm
+            libxkbcommon
+            libxshmfence
+            libGL
+            vulkan-loader
+          ]
+        );
+
         mdbrowse = pkgs.buildNpmPackage {
           pname = "mdbrowse";
           version = "0.1.0";
           inherit src;
           nodejs = pkgs.nodejs_22;
-          nativeBuildInputs = [ pkgs.unzip ];
+          nativeBuildInputs = [
+            pkgs.unzip
+            pkgs.patchelf
+          ];
 
           npmDepsHash = "sha256-K09Kj+tkROUBb5FFjH5bY3qub3NiyZD2ux2uYM/ORBk=";
           # No lifecycle scripts anywhere in the tree: @zenbu-labs/pixel's
@@ -74,6 +125,21 @@
             unzip -q ${pixelElectronZip} -d "$electronDist"
             # only its existence is checked, not its contents
             echo -n "${pixelElectronHash}" > "$electronDist/.zenbu-electron-sha256"
+          '';
+
+          # Patching in postFixup, not postConfigure: the standard fixupPhase
+          # runs shrinkRPath in between, which strips any rpath entry not
+          # needed by a binary's *static* DT_NEEDED. Chromium's ANGLE loads
+          # libEGL/libGL by dlopen() at runtime rather than linking them
+          # directly, so setting this any earlier just gets stripped back out
+          # (confirmed: still crashed, but on libEGL.so.1 instead of glib).
+          postFixup = ''
+            electronDistOut="$out/lib/node_modules/mdbrowse/node_modules/@zenbu-labs/pixel/electron/dist"
+            patchelf \
+              --set-interpreter "$(cat "$NIX_CC/nix-support/dynamic-linker")" \
+              --set-rpath "${electronLibPath}:$electronDistOut" \
+              "$electronDistOut/pixel" \
+              "$electronDistOut/chrome_crashpad_handler"
           '';
 
           meta = {
