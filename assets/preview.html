@@ -193,6 +193,9 @@
   }
 
   function renderMarkdown(text) {
+    // a save with no changes still bumps the version; without this,
+    // firstDiffLine returns one past the last line and scrolls to the bottom.
+    if (text === previousText) return;
     el.innerHTML = window.__terminalBrowserRenderMarkdown(text);
     if (previousText !== null) {
       scrollToLine(firstDiffLine(previousText, text));
