@@ -51,7 +51,7 @@
         # actually publishes for this release, verified straight against the
         # zip bytes; unzipping happens ourselves in postConfigure below.
         pixelElectronZip = pkgs.fetchurl {
-          url = "https://github.com/zenbu-labs/pixel/releases/download/electron-v${pixelElectronVersion}/electron-v${pixelElectronVersion}-${pixelElectronPlatform}.zip";
+          url = "https://github.com/zenbu-labs/terminal-browser/releases/download/electron-v${pixelElectronVersion}/electron-v${pixelElectronVersion}-${pixelElectronPlatform}.zip";
           sha256 = pixelElectronHash;
         };
 
@@ -113,7 +113,7 @@
             pkgs.patchelf
           ];
 
-          npmDepsHash = "sha256-K09Kj+tkROUBb5FFjH5bY3qub3NiyZD2ux2uYM/ORBk=";
+          npmDepsHash = "sha256-oWuf/c8/FbUyprOlgTtei+MzBpLXhfVrJqAxtc4ZyRI=";
           # No lifecycle scripts anywhere in the tree: @zenbu-labs/pixel's
           # postinstall would otherwise try (and fail) to reach the network.
           npmFlags = [ "--ignore-scripts" ];
@@ -140,6 +140,12 @@
               --set-rpath "${electronLibPath}:$electronDistOut" \
               "$electronDistOut/pixel" \
               "$electronDistOut/chrome_crashpad_handler"
+            # pixel.node is dlopen()ed by Electron, and the executable's
+            # RUNPATH doesn't apply to a dlopen()ed library's own DT_NEEDED,
+            # so it needs its own path to libstdc++/libgcc_s.
+            patchelf \
+              --set-rpath "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc ]}" \
+              "$out/lib/node_modules/mdbrowse/node_modules/@zenbu-labs/pixel-native-${pixelElectronPlatform}/pixel.node"
           '';
 
           meta = {

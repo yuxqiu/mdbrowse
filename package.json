@@ -11,6 +11,6 @@
     "lib"
   ],
   "dependencies": {
-    "@zenbu-labs/pixel": "0.0.15"
+    "@zenbu-labs/pixel": "0.0.21"
   }
 }
